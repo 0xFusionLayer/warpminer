@@ -3,8 +3,8 @@ module github.com/0xFusionLayer/warpminer
 go 1.21
 
 require (
-	github.com/0xFusionLayer/go-opencl v1.0.0
-	github.com/0xFusionLayer/stratum-jsonrpc2-ws v1.0.0
+	github.com/0xFusionLayer/go-opencl v1.1.0
+	github.com/0xFusionLayer/stratum-jsonrpc2-ws v1.1.0
 )
 
 require (
