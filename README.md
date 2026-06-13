@@ -64,7 +64,7 @@ Replace `user, pass, pool` with your actual values provided by the mining pool.
 
 linux
 ```bash
-sudo apt install ocl-icd-opencl-dev opencl-headers
+sudo apt install -y gcc g++ make build-essential ocl-icd-opencl-dev opencl-headers
 ```
 
 **Clone the repository and build the miner**
