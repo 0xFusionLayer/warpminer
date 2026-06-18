@@ -53,11 +53,30 @@ func (miner *Miner) init(intensity float64) error {
 	miner.compMode = 1
 	miner.unroll = 1
 	miner.workSize = min(int(device.Max_work_group_size)/16, 8)
-	miner.maxThreads = uint64(float64(device.Max_compute_units*6*8) * intensity)
-	if miner.maxThreads <= 0 {
-		miner.maxThreads = 100
+	maxScratchpadAlloc := uint64(device.Max_mem_alloc_size) * 9 / 10
+	maxThreadsByCompute := uint64(float64(device.Max_compute_units*6*8) * intensity)
+	maxThreadsByCompute = (maxThreadsByCompute / uint64(miner.workSize)) * uint64(miner.workSize)
+	maxThreadsByMemory := maxScratchpadAlloc / MEMORY
+	maxThreadsByMemory = (maxThreadsByMemory / uint64(miner.workSize)) * uint64(miner.workSize)
+	miner.maxThreads = min(maxThreadsByCompute, maxThreadsByMemory)
+	if miner.maxThreads == 0 {
+		return fmt.Errorf(
+			"invalid thread count (compute_units=%d max_alloc=%d intensity=%f)",
+			device.Max_compute_units,
+			device.Max_mem_alloc_size,
+			intensity,
+		)
 	}
-	miner.maxThreads = (((miner.maxThreads + uint64(miner.workSize)) - 1) / uint64(miner.workSize)) * uint64(miner.workSize)
+	log.Printf(
+		"GPU=%s VRAM=%.2fGB MaxAlloc=%.2fGB SafeAlloc=%.2fGB WorkSize=%d Threads=%d Scratchpad=%.2fMB",
+		device.Name,
+		float64(device.Global_mem_size)/(1024*1024*1024),
+		float64(device.Max_mem_alloc_size)/(1024*1024*1024),
+		float64(maxScratchpadAlloc)/(1024*1024*1024),
+		miner.workSize,
+		miner.maxThreads,
+		float64(MEMORY*miner.maxThreads)/(1024*1024),
+	)
 
 	// CompileKernels
 	codes := []string{fusionhashClCode}
@@ -75,6 +94,14 @@ func (miner *Miner) init(intensity float64) error {
 	miner.input_buf, err = runner.CreateEmptyBuffer(cl.READ_ONLY, 128)
 	if err != nil {
 		return fmt.Errorf("CreateBuffer input_buf err: %s, %v", device.Name, err)
+	}
+	requested := MEMORY * miner.maxThreads
+	if requested > maxScratchpadAlloc {
+		return fmt.Errorf(
+			"scratchpad allocation exceeds safe limit: requested=%d safe=%d",
+			requested,
+			maxScratchpadAlloc,
+		)
 	}
 	miner.scratchpads_buf, err = runner.CreateEmptyBuffer(cl.READ_WRITE, int(scratchPadSize*g_thd))
 	if err != nil {

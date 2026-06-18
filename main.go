@@ -98,6 +98,8 @@ func parseDeviceIndices(indices string) map[int]bool {
 }
 
 func main() {
+	log.Printf("%s %s (%s)", AppName, Version, "FusionHash")
+	
 	flag.Parse()
 
 	// get all OpenCL devices
@@ -124,7 +126,6 @@ func main() {
 			return
 		}
 	}
-
 	log.Printf("Pool connected: %s\n", pool.Url())
 
 	// Get selected devices
@@ -143,7 +144,11 @@ func main() {
 			go miner.run(pool)
 			miners = append(miners, miner)
 			log.Printf("Device [%d] %s: Initialized (maxThreads: %d, workSize: %d)\n",
-				miner.index, miner.device.Name, miner.maxThreads, miner.workSize)
+				miner.index,
+				miner.device.Name,
+				miner.maxThreads,
+				miner.workSize,
+			)
 		} else {
 			log.Printf("Device [%d] %s: Not selected", deviceIndex, device.Name)
 		}

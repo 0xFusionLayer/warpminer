@@ -1,6 +1,8 @@
 module github.com/0xFusionLayer/warpminer
 
-go 1.21
+go 1.21.0
+
+toolchain go1.21.13
 
 require (
 	github.com/0xFusionLayer/go-opencl v1.1.0
